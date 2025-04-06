@@ -332,7 +332,7 @@ def main():
     for i, pc in enumerate(polycubes):
         # "Up" position
         plot_polycube(pc, i, TEST_PATH + f"Figure{i}_up.png")
-        if i == 0 or i == 3:
+        if i == 0:
             plot_variations(pc, i)
         transformations.append(get_tranformations(pc))
 
