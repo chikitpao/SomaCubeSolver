@@ -298,11 +298,11 @@ def calculate_solutions(temp_matrix:np.ndarray,
 
 def main():
     with_tests = False
-    
+
     for arg in sys.argv[1:]:
         if arg == "--with-tests":
-            with_tests = True 
-    
+            with_tests = True
+
     if with_tests:
         test()
 
@@ -455,6 +455,6 @@ if __name__ == "__main__":
 #   [5 1 2]]]
 
 # Output of "time python3 soma_cube_solver.py":
-# real	0m6,510s
-# user	0m10,139s
-# sys	0m8,755s
+# real	0m1,897s
+# user	0m2,977s
+# sys	0m2,549s

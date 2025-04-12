@@ -240,13 +240,13 @@ end
 
 function main()
     with_tests::Bool = false
-    
+
     for arg in ARGS
         if arg == "--with-tests"
             with_tests = true
         end
     end
-    
+
     if with_tests
         test()
     end
@@ -340,9 +340,12 @@ end
 # Result:
 # [[1 0 0; 0 0 0; 0 0 0;;; 1 0 0; 1 0 0; 0 0 0;;; 1 1 0; 0 0 0; 0 0 0], [0 1 0; 1 1 0; 0 1 0;;; 0 0 0; 0 0 0; 0 0 0;;; 0 0 0; 0 0 0; 0 0 0], [0 0 0; 0 0 0; 0 0 1;;; 0 0 0; 0 0 1; 0 1 1;;; 0 0 0; 0 0 0; 0 1 0], [0 0 0; 0 0 0; 0 0 0;;; 0 0 0; 0 1 0; 0 0 0;;; 0 0 1; 0 1 1; 0 0 1], [0 0 1; 0 0 1; 0 0 0;;; 0 1 1; 0 0 0; 0 0 0;;; 0 0 0; 0 0 0; 0 0 0], [0 0 0; 0 0 0; 1 0 0;;; 0 0 0; 0 0 0; 1 0 0;;; 0 0 0; 1 0 0; 1 0 0]]
 # [1 2 5; 2 2 5; 6 2 3;;; 1 5 5; 1 4 3; 6 3 3;;; 1 1 4; 6 4 4; 6 3 4]
-# 4.342548 seconds (7.89 M allocations: 435.977 MiB, 3.10% gc time, 78.25% compilation time)
+#  3.343250 seconds (7.60 M allocations: 418.443 MiB, 2.12% gc time, 87.33% compilation time)
+
 
 # # Output of "time julia soma_cube_solver.jl":
-# real	0m10,235s
-# user	0m10,686s
-# sys	0m0,268s
+#  3.343250 seconds (7.60 M allocations: 418.443 MiB, 2.12% gc time, 87.33% compilation time)
+# real	0m9,120s
+# user	0m9,225s
+# sys	0m0,318s
+
