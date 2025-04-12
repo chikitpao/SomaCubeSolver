@@ -239,7 +239,17 @@ function calculate_solutions(temp_matrix::Array{Int64, 3},
 end
 
 function main()
-    test()
+    with_tests::Bool = false
+    
+    for arg in ARGS
+        if arg == "--with-tests"
+            with_tests = true
+        end
+    end
+    
+    if with_tests
+        test()
+    end
 
     # Soma polycubes are described in top view.
     # Bottom -> Bit 0
@@ -270,7 +280,7 @@ function main()
     # println("typeof(raw_polycubes): $(typeof(raw_polycubes))")
 
     # Create directories for output files.
-    if !isdir(TEST_PATH) && !isfile(TEST_PATH)
+    if with_tests && !isdir(TEST_PATH) && !isfile(TEST_PATH)
         mkdir(TEST_PATH)
     end
     if !isdir(RESULT_PATH) && !isfile(RESULT_PATH)
@@ -292,10 +302,12 @@ function main()
 
     transformations = Vector{Set{Array{Int64, 3}}}()
     for (i, pc) ∈ enumerate(polycubes)
-        # "Up" position
-        plot_polycube(template, pc, i, TEST_PATH * "Figure$i" * "_up.png")
-        if i == 1
-            plot_variations(template, pc, i)
+        if with_tests
+            # "Up" position
+            plot_polycube(template, pc, i, TEST_PATH * "Figure$i" * "_up.png")
+            if i == 1
+                plot_variations(template, pc, i)
+            end
         end
         push!(transformations, get_tranformations(pc))
     end

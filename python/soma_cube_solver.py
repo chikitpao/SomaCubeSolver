@@ -6,6 +6,7 @@ import itertools
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import sys
 
 
 TEST_PATH = "test/"
@@ -83,19 +84,27 @@ def plot_cube(posx:int, posy:int, posz:int, id:int, ax):
     Y_ = Y+posy
     Z1_ = X+posz
     Z2_ = Y+posz
-    alpha_ = 0.3
+    alpha_ = 0.1
+    wire_color = 'k'
+    linewidth_ = 1
     colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
     color_ = colors[id]
 
     # bottom and top
     ax.plot_surface(X_, Y_, one*posz, alpha=alpha_, color=color_)
+    ax.plot_wireframe(X_, Y_, one*posz, color=wire_color, linewidth=linewidth_)
     ax.plot_surface(X_, Y_, one*(posz+1), alpha=alpha_, color=color_)
+    ax.plot_wireframe(X_, Y_, one*(posz+1), color=wire_color, linewidth=linewidth_)
     # left and right
     ax.plot_surface(one*posx, Y_, Z1_, alpha=alpha_, color=color_)
+    ax.plot_wireframe(one*posx, Y_, Z1_, color=wire_color, linewidth=linewidth_)
     ax.plot_surface(one*(posx+1), Y_, Z1_, alpha=alpha_, color=color_)
+    ax.plot_wireframe(one*(posx+1), Y_, Z1_, color=wire_color, linewidth=linewidth_)
     # front and back
     ax.plot_surface(X_, one*posy, Z2_, alpha=alpha_, color=color_)
+    ax.plot_wireframe(X_, one*posy, Z2_, color=wire_color, linewidth=linewidth_)
     ax.plot_surface(X_, one*(posy+1), Z2_, alpha=alpha_, color=color_)
+    ax.plot_wireframe(X_, one*(posy+1), Z2_, color=wire_color, linewidth=linewidth_)
 
     ax.set_xlabel("x")
     ax.set_ylabel("y")
@@ -288,7 +297,14 @@ def calculate_solutions(temp_matrix:np.ndarray,
     return []
 
 def main():
-    test()
+    with_tests = False
+    
+    for arg in sys.argv[1:]:
+        if arg == "--with-tests":
+            with_tests = True 
+    
+    if with_tests:
+        test()
 
     # Soma polycubes are described in top view.
     # Bottom -> Bit 0
@@ -316,7 +332,7 @@ def main():
     ]
 
     # # Create directories for output files.
-    if not os.path.exists(TEST_PATH):
+    if with_tests and not os.path.exists(TEST_PATH):
         os.makedirs(TEST_PATH)
     if not os.path.exists(RESULT_PATH):
         os.makedirs(RESULT_PATH)
@@ -330,10 +346,11 @@ def main():
 
     transformations = []
     for i, pc in enumerate(polycubes):
-        # "Up" position
-        plot_polycube(pc, i, TEST_PATH + f"Figure{i}_up.png")
-        if i == 0:
-            plot_variations(pc, i)
+        if with_tests:
+            # "Up" position
+            plot_polycube(pc, i, TEST_PATH + f"Figure{i}_up.png")
+            if i == 0:
+                plot_variations(pc, i)
         transformations.append(get_tranformations(pc))
 
     # Output:
