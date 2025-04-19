@@ -2,11 +2,13 @@
 # Soma cube solver
 # Author: Chi-Kit Pao
 
+from copy import deepcopy
 import itertools
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 import sys
+import time
 
 
 TEST_PATH = "test/"
@@ -271,16 +273,18 @@ def get_tranformations(polycube:np.ndarray) -> list[np.ndarray]:
     # Remove duplicates
     result = []
     for candidate in temp_result:
-        assert np.max(candidate) == 1
         if all(not np.array_equal(M, candidate) for M in result):
             result.append(candidate)
 
     return result
 
-def calculate_solutions(temp_matrix:np.ndarray,
-    transformations:list[list[np.ndarray]]) -> list[np.ndarray]:
+def calculate_solutions(all_solutions:bool, temp_matrix:np.ndarray, temp_result:list[np.ndarray],
+    transformations:list[list[np.ndarray]], results:list[list[np.ndarray]]):
+    if not all_solutions and results:
+        return
+    
     if not transformations:
-        return []
+        return
 
     for t in transformations[0]:
         # Backtracking
@@ -288,20 +292,51 @@ def calculate_solutions(temp_matrix:np.ndarray,
         if np.max(temp) > 1:
             continue
 
+        temp_result.append(t)
         if len(transformations) == 1:
-            return [t]
+            results.append(deepcopy(temp_result))
+            if not all_solutions:
+                return
         else:
-            temp_result = calculate_solutions(temp, transformations[1:])
-            if temp_result:
-                return [t] + temp_result
-    return []
+            calculate_solutions(all_solutions, temp, temp_result, transformations[1:], results)
+        
+        temp -= t
+        temp_result.pop()
+
+def calculate_result_groups(results):
+    result_groups = []
+    for result in results:
+        result2 = sum([i * r for i, r in enumerate(result)])
+        if not result_groups:
+            result_groups.append(result2)
+        else:
+            result_transformations = get_tranformations(result2)
+            is_duplicate = False
+            for t in result_transformations:
+                for test_element in result_groups:
+                    if np.array_equal(t, test_element):
+                        is_duplicate = True
+                        break
+                if is_duplicate:
+                    break
+            if not is_duplicate:
+                result_groups.append(result_transformations[0])
+    return result_groups
 
 def main():
+    start_time = time.time()
+
     with_tests = False
+    all_solutions = False
+    normal_cube = False
 
     for arg in sys.argv[1:]:
         if arg == "--with-tests":
             with_tests = True
+        elif arg == "--all-solutions":
+            all_solutions = True
+        elif arg == "--normal-cube":
+            normal_cube = True
 
     if with_tests:
         test()
@@ -310,7 +345,7 @@ def main():
     # Bottom -> Bit 0
     # Middle -> Bit 1
     # Top -> Bit 2
-    raw_polycubes = [
+    raw_polycubes_custom = [
         [[1, 1, 0],
          [3, 0, 0],
          [1, 0, 0]],
@@ -330,6 +365,42 @@ def main():
          [0, 1, 0],
          [0, 1, 0]]
     ]
+    # => transformation count: 600
+    # => [96, 72, 96, 96, 96, 144]
+    # => Result count: 24
+    # => Distinct result count: 1
+    # => Time elapsed: 21.532670736312866 s
+
+    raw_polycubes_normal = [
+        [[3, 1, 0],
+         [1, 0, 0],
+         [0, 0, 0]],
+        [[1, 1, 0],
+         [0, 1, 0],
+         [0, 1, 0]],
+        [[1, 3, 0],
+         [1, 0, 0],
+         [0, 0, 0]],
+        [[3, 1, 0],
+         [0, 1, 0],
+         [0, 0, 0]],
+        [[0, 1, 0],
+         [1, 1, 0],
+         [1, 0, 0]],
+        [[1, 1, 0],
+         [0, 1, 0],
+         [0, 0, 0]],
+        [[1, 1, 1],
+         [0, 1, 0],
+         [0, 0, 0]],
+    ]
+    # => transformation count: 688
+    # => [64, 144, 96, 96, 72, 144, 72]
+    # => Result count: 11520
+    # => Distinct result count: 480
+    # => Time elapsed: 1846.049610376358 s
+
+    raw_polycubes = raw_polycubes_normal if normal_cube else raw_polycubes_custom
 
     # # Create directories for output files.
     if with_tests and not os.path.exists(TEST_PATH):
@@ -354,32 +425,39 @@ def main():
         transformations.append(get_tranformations(pc))
 
     # Output:
-    # transformation count: 768
-    # [96, 144, 96, 96, 192, 144]
+    # transformation count: 600
+    # [96, 72, 96, 96, 96, 144]
     print(f"transformation count: {sum(map(len, transformations))}")
     print(f"{list(map(len, transformations))}")
 
-    result = calculate_solutions(np.zeros((3, 3, 3), int), transformations)
+    results = []
+    calculate_solutions(all_solutions, np.zeros((3, 3, 3), int), [], transformations, results)
+    first_result = results[0]
     print("Result:")
-    print(result)
-    print(sum([i * r for i, r in enumerate(result)]))
+    print(first_result)
+    print(sum([i * r for i, r in enumerate(first_result)]))
+    
+    if all_solutions:
+        print(f"Result count: {len(results)}")
+        result_groups = calculate_result_groups(results)
+        print(f"Distinct result count: {len(result_groups)}")
 
     fig = plt.figure()
     ax = add_subplot(fig)
-    for i, pc in enumerate(result):
+    for i, pc in enumerate(first_result):
          plot_polycube(pc, i, "", ax)
     plt.savefig(RESULT_PATH + "Result.png")
     plt.close(fig)
-    for i, pc in enumerate(result):
+    for i, pc in enumerate(first_result):
          plot_polycube(pc, i, RESULT_PATH + f"Result{i}.png")
+
+    print(f"Time elapsed: {time.time() - start_time} s")
 
 
 if __name__ == "__main__":
     main()
 
-# Result:
-# transformation count: 600
-# [96, 72, 96, 96, 96, 144]
+
 # Result:
 # [array([[[1, 1, 0],
 #         [1, 0, 0],

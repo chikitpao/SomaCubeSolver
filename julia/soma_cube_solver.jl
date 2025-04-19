@@ -213,11 +213,14 @@ function get_tranformations(polycube::Array{Int64, 3})::Set{Array{Int64, 3}}
     return result
 end
 
-function calculate_solutions(temp_matrix::Array{Int64, 3},
-    transformations::Vector{Set{Array{Int64, 3}}})::Vector{Array{Int64, 3}}
-
+function calculate_solutions(all_solutions::Bool, temp_matrix::Array{Int64, 3}, 
+    temp_result::Vector{Array{Int64, 3}}, transformations::Vector{Set{Array{Int64, 3}}}, 
+    results::Vector{Vector{Array{Int64, 3}}})
+    if !all_solutions && !isempty(results)
+        return
+    end
     if isempty(transformations)
-        return []
+        return
     end
     for t ∈ transformations[1]
         # Backtracking
@@ -226,24 +229,60 @@ function calculate_solutions(temp_matrix::Array{Int64, 3},
             continue
         end
 
+        push!(temp_result, t)
         if length(transformations) == 1
-            return [t]
+            push!(results, deepcopy(temp_result))
+            if !all_solutions
+                return
+            end
         else
-            temp_result = calculate_solutions(temp, transformations[2:end])
-            if !isempty(temp_result)
-                return append!([t], temp_result)
+            calculate_solutions(all_solutions, temp, temp_result, transformations[2:end], results)
+        end
+        pop!(temp_result)
+        temp -= t
+    end
+end
+
+function calculate_result_groups(results::Vector{Vector{Array{Int64, 3}}})::Vector{Array{Int64, 3}}
+    result_groups = Vector{Array{Int64, 3}}()
+    for result ∈ results
+        result2 = sum([i * r for (i, r) ∈ enumerate(result)])
+        if isempty(result_groups)
+            push!(result_groups, result2)
+        else
+            result_transformations = get_tranformations(result2)
+            is_duplicate = false
+            for t ∈ result_transformations
+                for test_element ∈ result_groups
+                    if t == test_element
+                        is_duplicate = true
+                        break
+                    end
+                end
+                if is_duplicate
+                    break
+                end
+            end
+            if !is_duplicate
+                push!(result_groups, first(result_transformations))
             end
         end
     end
-    return []
+    return result_groups
 end
 
 function main()
-    with_tests::Bool = false
+    with_tests = false
+    all_solutions = false
+    normal_cube = false
 
     for arg in ARGS
         if arg == "--with-tests"
             with_tests = true
+        elseif arg == "--all-solutions"
+            all_solutions = true
+        elseif arg == "--normal-cube"
+            normal_cube = true
         end
     end
 
@@ -255,7 +294,7 @@ function main()
     # Bottom -> Bit 0
     # Middle -> Bit 1
     # Top -> Bit 2
-    raw_polycubes = [
+    raw_polycubes_custom = [
         [1 1 0
          3 0 0
          1 0 0],
@@ -275,6 +314,41 @@ function main()
          0 1 0
          0 1 0],
     ]
+    # => transformation count: 600
+    # => [96, 72, 96, 96, 96, 144]
+    # => Result count: 24
+    # => Distinct result count: 1
+    # => 23.022160 seconds (17.25 M allocations: 1.591 GiB, 0.82% gc time, 17.88% compilation time)
+    raw_polycubes_normal = [
+        [3 1 0
+         1 0 0
+         0 0 0],
+        [1 1 0
+         0 1 0
+         0 1 0],
+        [1 3 0
+         1 0 0
+         0 0 0],
+        [3 1 0
+         0 1 0
+         0 0 0],
+        [0 1 0
+         1 1 0
+         1 0 0],
+        [1 1 0
+         0 1 0
+         0 0 0],
+        [1 1 1
+         0 1 0
+         0 0 0],
+    ]
+    # => transformation count: 688
+    # => [64, 144, 96, 96, 72, 144, 72]
+    # => Result count: 11520
+    # => Distinct result count: 480
+    # => 75.760636 seconds (742.56 M allocations: 90.691 GiB, 11.29% gc time, 5.56% compilation time)
+    
+    raw_polycubes = normal_cube ? raw_polycubes_normal : raw_polycubes_custom
 
     # Output: typeof(raw_polycubes): Vector{Matrix{Int64}}
     # println("typeof(raw_polycubes): $(typeof(raw_polycubes))")
@@ -312,24 +386,29 @@ function main()
         push!(transformations, get_tranformations(pc))
     end
 
-    # Output:
-    # transformation count: 600
-    # [96, 72, 96, 96, 96, 144]
     println("transformation count: $(sum(map(length, transformations)))")
     println("$(map(length, transformations))")
 
-    result = calculate_solutions(zeros(Int64, 3, 3, 3), transformations)
+    results = Vector{Vector{Array{Int64, 3}}}()
+    calculate_solutions(all_solutions, zeros(Int64, 3, 3, 3), Vector{Array{Int64, 3}}(), transformations, results)
     println("Result:")
-    println(result)
-    println(sum([i * r for (i, r) ∈ enumerate(result)]))
+    first_result = first(results)
+    println(first_result)
+    println(sum([i * r for (i, r) ∈ enumerate(first_result)]))
+    
+    if all_solutions
+        println("Result count: $(length(results))")
+        result_groups = calculate_result_groups(results)
+        println("Distinct result count: $(length(result_groups))")
+    end
 
     plot()
-    for (i, pc) ∈ enumerate(result)
+    for (i, pc) ∈ enumerate(first_result)
         plot_polycube(template, pc, i, "", false)
     end
     #gui()
     savefig(RESULT_PATH * "Result.png")
-    for (i, pc) ∈ enumerate(result)
+    for (i, pc) ∈ enumerate(first_result)
         plot_polycube(template, pc, i, RESULT_PATH * "Result$i" * ".png")
     end
 end
@@ -348,4 +427,3 @@ end
 # real	0m9,120s
 # user	0m9,225s
 # sys	0m0,318s
-
