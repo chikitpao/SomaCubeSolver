@@ -58,7 +58,7 @@ function plot_cube(template::Template, posx::Int64, posy::Int64, posz::Int64, id
     ex = map(x -> x + dx, template.edges_x)
     ey = map(x -> x + dy, template.edges_y)
     ez = map(x -> x + dz, template.edges_z)
-    plot!(ex,ey,ez; lc=:black, lw=0.5, lims=(0.0,3.25))
+    plot!(ex,ey,ez; lc=:black, lw=0.5, lims=(0.0,3.25), xlabel="x", ylabel="y", zlabel="z")
 end
 
 function plot_polycube(template::Template, polycube::Array{Int64, 3}, id::Int64, file_name::String, stand_alone::Bool=true)
@@ -82,47 +82,47 @@ end
 function plot_variations(template::Template, polycube::Array{Int64, 3}, id::Int64)
     pc = polycube
     i = id
-    # Other 3 orientations of "up" position
+    # Other 3 orientations of "up" position: Rotate around z-axis.
     plot_polycube(template, mapslices(rotl90,pc,dims=[1,2]), i, TEST_PATH * "Figure$i" * "_up_left.png")
     plot_polycube(template, mapslices(rot180,pc,dims=[1,2]), i, TEST_PATH * "Figure$i" * "_up_180.png")
     plot_polycube(template, mapslices(rotr90,pc,dims=[1,2]), i, TEST_PATH * "Figure$i" * "_up_right.png")
 
-    # "Left" position
+    # "Left" position: Rotate left around y-axis. Original up-axis (= z-axis) has rotated to (negative) x-axis.
     left_pc = mapslices(rotl90,pc,dims=[1,3])
-    plot_polycube(template, left_pc, i, TEST_PATH * "Figure$i" * "left.png")
-    # Other 3 orientations
+    plot_polycube(template, left_pc, i, TEST_PATH * "Figure$i" * "_left.png")
+    # Other 3 orientations: Rotate around x-axis.
     plot_polycube(template, mapslices(rotl90,left_pc,dims=[2,3]), i, TEST_PATH * "Figure$i" * "_left_left.png")
     plot_polycube(template, mapslices(rot180,left_pc,dims=[2,3]), i, TEST_PATH * "Figure$i" * "_left_180.png")
     plot_polycube(template, mapslices(rotr90,left_pc,dims=[2,3]), i, TEST_PATH * "Figure$i" * "_left_right.png")
 
-    # "Right" position
+    # "Right" position: Rotate right around y-axis. Original up-axis (= z-axis) has rotated to x-axis.
     right_pc = mapslices(rotr90,pc,dims=[1,3])
-    plot_polycube(template, right_pc, i, TEST_PATH * "Figure$i" * "right.png")
-    # Other 3 orientations
+    plot_polycube(template, right_pc, i, TEST_PATH * "Figure$i" * "_right.png")
+    # Other 3 orientations: Rotate around x-axis.
     plot_polycube(template, mapslices(rotl90,right_pc,dims=[2,3]), i, TEST_PATH * "Figure$i" * "_right_left.png")
     plot_polycube(template, mapslices(rot180,right_pc,dims=[2,3]), i, TEST_PATH * "Figure$i" * "_right_180.png")
     plot_polycube(template, mapslices(rotr90,right_pc,dims=[2,3]), i, TEST_PATH * "Figure$i" * "_right_right.png")
 
-    # # "Down" position
+    # "Down" position: Rotate 180° around y-axis. Original up-axis (= z-axis) has rotated to (negative) z-axis.
     down_pc = mapslices(rot180,pc,dims=[1,3])
-    plot_polycube(template, down_pc, i, TEST_PATH * "Figure$i" * "down.png")
-    # Other 3 orientations
+    plot_polycube(template, down_pc, i, TEST_PATH * "Figure$i" * "_down.png")
+    # Other 3 orientations: Rotate around z-axis.
     plot_polycube(template, mapslices(rotl90,down_pc,dims=[1,2]), i, TEST_PATH * "Figure$i" * "_down_left.png")
     plot_polycube(template, mapslices(rot180,down_pc,dims=[1,2]), i, TEST_PATH * "Figure$i" * "_down_180.png")
     plot_polycube(template, mapslices(rotr90,down_pc,dims=[1,2]), i, TEST_PATH * "Figure$i" * "_down_right.png")
 
-    # "Forward position"
+    # "Forward position": Rotate right around x-axis. Original up-axis (= z-axis) has rotated to y-axis.
     forward_pc = mapslices(rotr90,pc,dims=[2,3])
     plot_polycube(template, forward_pc, i, TEST_PATH * "Figure$i" * "_forward.png")
-    # Other 3 orientations
+    # Other 3 orientations: Rotate around y-axis.
     plot_polycube(template, mapslices(rotl90,forward_pc,dims=[1,3]), i, TEST_PATH * "Figure$i" * "_forward_left.png")
     plot_polycube(template, mapslices(rot180,forward_pc,dims=[1,3]), i, TEST_PATH * "Figure$i" * "_forward_180.png")
     plot_polycube(template, mapslices(rotr90,forward_pc,dims=[1,3]), i, TEST_PATH * "Figure$i" * "_forward_right.png")
 
-    # "Backward position"
+    # "Backward position": Rotate left around x-axis. Original up-axis (= z-axis) has rotated to (negative) y-axis.
     backward_pc = mapslices(rotl90,pc,dims=[2,3])
     plot_polycube(template, backward_pc, i, TEST_PATH * "Figure$i" * "_backward.png")
-    # Other 3 orientations
+    # Other 3 orientations: Rotate around y-axis.
     plot_polycube(template, mapslices(rotl90,backward_pc,dims=[1,3]), i, TEST_PATH * "Figure$i" * "_backward_left.png")
     plot_polycube(template, mapslices(rot180,backward_pc,dims=[1,3]), i, TEST_PATH * "Figure$i" * "_backward_180.png")
     plot_polycube(template, mapslices(rotr90,backward_pc,dims=[1,3]), i, TEST_PATH * "Figure$i" * "_backward_right.png")
@@ -131,49 +131,49 @@ end
 function get_rotations(polycube::Array{Int64, 3})::Set{Array{Int64, 3}}
     result = Set{Array{Int64, 3}}()
     pc = polycube
-    # "Up" position
+    # "Up" position (= z-axis)
     push!(result, polycube)
-    # Other 3 orientations of "up" position
+    # Other 3 orientations of "up" position: Rotate around z-axis.
     push!(result, mapslices(rotl90,pc,dims=[1,2]))
     push!(result, mapslices(rot180,pc,dims=[1,2]))
     push!(result, mapslices(rotr90,pc,dims=[1,2]))
 
-    # "Left" position
+    # "Left" position: Rotate left around y-axis. Original up-axis (= z-axis) has rotated to (negative) x-axis.
     left_pc = mapslices(rotl90,pc,dims=[1,3])
     push!(result, left_pc)
-    # Other 3 orientations
+    # Other 3 orientations: Rotate around x-axis.
     push!(result, mapslices(rotl90,left_pc,dims=[2,3]))
     push!(result, mapslices(rot180,left_pc,dims=[2,3]))
     push!(result, mapslices(rotr90,left_pc,dims=[2,3]))
 
-    # "Right" position
+    # "Right" position: Rotate right around y-axis. Original up-axis (= z-axis) has rotated to x-axis.
     right_pc = mapslices(rotr90,pc,dims=[1,3])
     push!(result, right_pc)
-    # Other 3 orientations
+    # Other 3 orientations: Rotate around x-axis.
     push!(result, mapslices(rotl90,right_pc,dims=[2,3]))
     push!(result, mapslices(rot180,right_pc,dims=[2,3]))
     push!(result, mapslices(rotr90,right_pc,dims=[2,3]))
 
-    # # "Down" position
+    # "Down" position: Rotate 180° around y-axis. Original up-axis (= z-axis) has rotated to (negative) z-axis.
     down_pc = mapslices(rot180,pc,dims=[1,3])
     push!(result, down_pc)
-    # Other 3 orientations
+    # Other 3 orientations: Rotate around z-axis.
     push!(result, mapslices(rotl90,down_pc,dims=[1,2]))
     push!(result, mapslices(rot180,down_pc,dims=[1,2]))
     push!(result, mapslices(rotr90,down_pc,dims=[1,2]))
 
-    # "Forward position"
+    # "Forward position": Rotate right around x-axis. Original up-axis (= z-axis) has rotated to y-axis.
     forward_pc = mapslices(rotr90,pc,dims=[2,3])
     push!(result, forward_pc)
-    # Other 3 orientations
+    # Other 3 orientations: Rotate around y-axis.
     push!(result, mapslices(rotl90,forward_pc,dims=[1,3]))
     push!(result, mapslices(rot180,forward_pc,dims=[1,3]))
     push!(result, mapslices(rotr90,forward_pc,dims=[1,3]))
 
-    # "Backward position"
+    # "Backward position": Rotate left around x-axis. Original up-axis (= z-axis) has rotated to (negative) y-axis.
     backward_pc = mapslices(rotl90,pc,dims=[2,3])
     push!(result, backward_pc)
-    # Other 3 orientations
+    # Other 3 orientations: Rotate around y-axis.
     push!(result, mapslices(rotl90,backward_pc,dims=[1,3]))
     push!(result, mapslices(rot180,backward_pc,dims=[1,3]))
     push!(result, mapslices(rotr90,backward_pc,dims=[1,3]))

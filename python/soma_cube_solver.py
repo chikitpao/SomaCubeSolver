@@ -59,8 +59,10 @@ def test():
 
     print(type(A))
     print(A)
-    print(np.rot90(A, k=-1, axes=(1,2)))  # k = -1 => clockwise
-    print(np.rot90(A, k=-1, axes=(0,2)))  # k = -1 => clockwise
+    # Axis 1 to 2 is counter-clockwise to axis 0, so use k = -1 for clockwise rotation.
+    print(np.rot90(A, k=-1, axes=(1,2)))
+    # Axis 0 to 2 is clockwise to axis 1, so use k = -1 for counter-clockwise rotation.
+    print(np.rot90(A, k=-1, axes=(0,2)))
     # Axis 0 -> "layer"
     # Axis 1 -> row
     # Axis 2 -> column
@@ -140,51 +142,50 @@ def plot_polycube(polycube:np.ndarray, id:int, file_name:str, ax=None):
 def plot_variations(polycube:np.ndarray, id:int):
     pc = polycube
     i = id
-    # Other 3 orientations of "up" position
+    # Other 3 orientations of "up" position: Rotate around z-axis.
+    plot_polycube(np.rot90(pc, k=1, axes=(1,2)), i, TEST_PATH + f"Figure{i}_up_left.png")
+    plot_polycube(np.rot90(pc, k=2, axes=(1,2)), i, TEST_PATH + f"Figure{i}_up_180.png")
+    plot_polycube(np.rot90(pc, k=-1, axes=(1,2)), i, TEST_PATH + f"Figure{i}_up_right.png")
 
-    plot_polycube(np.rot90(pc, k=1, axes=(0,1)), i, TEST_PATH + f"Figure{i}_up_left.png")
-    plot_polycube(np.rot90(pc, k=2, axes=(0,1)), i, TEST_PATH + f"Figure{i}_up_180.png")
-    plot_polycube(np.rot90(pc, k=-1, axes=(0,1)), i, TEST_PATH + f"Figure{i}_up_right.png")
+    # "Left" position: Rotate left around y-axis. Original up-axis (= z-axis) has rotated to (negative) x-axis.
+    left_pc = np.rot90(pc, k=1, axes=(1,0))
+    plot_polycube(left_pc, i, TEST_PATH + f"Figure{i}_left.png")
+    # Other 3 orientations: Rotate around x-axis.
+    plot_polycube(np.rot90(left_pc, k=1, axes=(2,0)), i, TEST_PATH + f"Figure{i}_left_left.png")
+    plot_polycube(np.rot90(left_pc, k=2, axes=(2,0)), i, TEST_PATH + f"Figure{i}_left_180.png")
+    plot_polycube(np.rot90(left_pc, k=-1, axes=(2,0)), i, TEST_PATH + f"Figure{i}_left_right.png")
 
-    # "Left" position
-    left_pc = np.rot90(pc, k=1, axes=(0,2))
-    plot_polycube(left_pc, i, TEST_PATH + f"Figure{i}left.png")
-    # Other 3 orientations
-    plot_polycube(np.rot90(pc, k=1, axes=(1,2)), i, TEST_PATH + f"Figure{i}_left_left.png")
-    plot_polycube(np.rot90(pc, k=2, axes=(1,2)), i, TEST_PATH + f"Figure{i}_left_180.png")
-    plot_polycube(np.rot90(pc, k=-1, axes=(1,2)), i, TEST_PATH + f"Figure{i}_left_right.png")
+    # "Right" position: Rotate right around y-axis. Original up-axis (= z-axis) has rotated to x-axis.
+    right_pc = np.rot90(pc, k=-1, axes=(1,0))
+    plot_polycube(right_pc, i, TEST_PATH + f"Figure{i}_right.png")
+    # Other 3 orientations: Rotate around x-axis.
+    plot_polycube(np.rot90(right_pc, k=1, axes=(2,0)), i, TEST_PATH + f"Figure{i}_right_left.png")
+    plot_polycube(np.rot90(right_pc, k=2, axes=(2,0)), i, TEST_PATH + f"Figure{i}_right_180.png")
+    plot_polycube(np.rot90(right_pc, k=-1, axes=(2,0)), i, TEST_PATH + f"Figure{i}_right_right.png")
 
-    # "Right" position
-    right_pc = np.rot90(pc, k=-1, axes=(0,2))
-    plot_polycube(right_pc, i, TEST_PATH + f"Figure{i}right.png")
-    # Other 3 orientations
-    plot_polycube(np.rot90(pc, k=1, axes=(1,2)), i, TEST_PATH + f"Figure{i}_right_left.png")
-    plot_polycube(np.rot90(pc, k=2, axes=(1,2)), i, TEST_PATH + f"Figure{i}_right_180.png")
-    plot_polycube(np.rot90(pc, k=-1, axes=(1,2)), i, TEST_PATH + f"Figure{i}_right_right.png")
+    # "Down" position: Rotate 180° around y-axis. Original up-axis (= z-axis) has rotated to (negative) z-axis.
+    down_pc = np.rot90(pc, k=2, axes=(1,0))
+    plot_polycube(down_pc, i, TEST_PATH + f"Figure{i}_down.png")
+    # Other 3 orientations: Rotate around z-axis.
+    plot_polycube(np.rot90(down_pc, k=1, axes=(1,2)), i, TEST_PATH + f"Figure{i}_down_left.png")
+    plot_polycube(np.rot90(down_pc, k=2, axes=(1,2)), i, TEST_PATH + f"Figure{i}_down_180.png")
+    plot_polycube(np.rot90(down_pc, k=-1, axes=(1,2)), i, TEST_PATH + f"Figure{i}_down_right.png")
 
-    # # "Down" position
-    down_pc = np.rot90(pc, k=2, axes=(0,2))
-    plot_polycube(down_pc, i, TEST_PATH + f"Figure{i}down.png")
-    # Other 3 orientations
-    plot_polycube(np.rot90(pc, k=1, axes=(0,1)), i, TEST_PATH + f"Figure{i}_down_left.png")
-    plot_polycube(np.rot90(pc, k=2, axes=(0,1)), i, TEST_PATH + f"Figure{i}_down_180.png")
-    plot_polycube(np.rot90(pc, k=-1, axes=(0,1)), i, TEST_PATH + f"Figure{i}_down_right.png")
-
-    # "Forward position"
-    forward_pc = np.rot90(pc, k=-1, axes=(1,2))
+    # "Forward position": Rotate right around x-axis. Original up-axis (= z-axis) has rotated to y-axis.
+    forward_pc = np.rot90(pc, k=-1, axes=(2,0))
     plot_polycube(forward_pc, i, TEST_PATH + f"Figure{i}_forward.png")
-    # Other 3 orientations
-    plot_polycube(np.rot90(pc, k=1, axes=(0,2)), i, TEST_PATH + f"Figure{i}_forward_left.png")
-    plot_polycube(np.rot90(pc, k=2, axes=(0,2)), i, TEST_PATH + f"Figure{i}_forward_180.png")
-    plot_polycube(np.rot90(pc, k=-1, axes=(0,2)), i, TEST_PATH + f"Figure{i}_forward_right.png")
+    # Other 3 orientations: Rotate around y-axis.
+    plot_polycube(np.rot90(forward_pc, k=1, axes=(1,0)), i, TEST_PATH + f"Figure{i}_forward_left.png")
+    plot_polycube(np.rot90(forward_pc, k=2, axes=(1,0)), i, TEST_PATH + f"Figure{i}_forward_180.png")
+    plot_polycube(np.rot90(forward_pc, k=-1, axes=(1,0)), i, TEST_PATH + f"Figure{i}_forward_right.png")
 
-    # "Backward position"
-    backward_pc = np.rot90(pc, k=1, axes=(1,2))
+    # "Backward position": Rotate left around x-axis. Original up-axis (= z-axis) has rotated to (negative) y-axis.
+    backward_pc = np.rot90(pc, k=1, axes=(2,0))
     plot_polycube(backward_pc, i, TEST_PATH + f"Figure{i}_backward.png")
-    # Other 3 orientations
-    plot_polycube(np.rot90(pc, k=1, axes=(0,2)), i, TEST_PATH + f"Figure{i}_backward_left.png")
-    plot_polycube(np.rot90(pc, k=2, axes=(0,2)), i, TEST_PATH + f"Figure{i}_backward_180.png")
-    plot_polycube(np.rot90(pc, k=-1, axes=(0,2)), i, TEST_PATH + f"Figure{i}_backward_right.png")
+    # Other 3 orientations: Rotate around y-axis.
+    plot_polycube(np.rot90(backward_pc, k=1, axes=(1,0)), i, TEST_PATH + f"Figure{i}_backward_left.png")
+    plot_polycube(np.rot90(backward_pc, k=2, axes=(1,0)), i, TEST_PATH + f"Figure{i}_backward_180.png")
+    plot_polycube(np.rot90(backward_pc, k=-1, axes=(1,0)), i, TEST_PATH + f"Figure{i}_backward_right.png")
 
 def get_rotations(polycube:np.ndarray) -> list[np.ndarray]:
     # REMARK: 'numpy.ndarray' is not hashable, so put it into a
@@ -192,52 +193,52 @@ def get_rotations(polycube:np.ndarray) -> list[np.ndarray]:
     # TypeError: unhashable type: 'numpy.ndarray'
     result = list()
     pc = polycube
-    # "Up" position
+    # "Up" position (= z-axis)
     result.append(polycube)
-    # Other 3 orientations of "up" position
-    result.append(np.rot90(pc, k=1, axes=(0,1)))
-    result.append(np.rot90(pc, k=2, axes=(0,1)))
-    result.append(np.rot90(pc, k=-1, axes=(0,1)))
+    # Other 3 orientations of "up" position: Rotate around z-axis.
+    result.append(np.rot90(pc, k=1, axes=(1,2)))
+    result.append(np.rot90(pc, k=2, axes=(1,2)))
+    result.append(np.rot90(pc, k=-1, axes=(1,2)))
 
-    # "Left" position
-    left_pc = np.rot90(pc, k=1, axes=(0,2))
+    # "Left" position: Rotate left around y-axis. Original up-axis (= z-axis) has rotated to (negative) x-axis.
+    left_pc = np.rot90(pc, k=1, axes=(1,0))
     result.append(left_pc)
-    # Other 3 orientations
-    result.append(np.rot90(left_pc, k=1, axes=(1,2)))
-    result.append(np.rot90(left_pc, k=2, axes=(1,2)))
-    result.append(np.rot90(left_pc, k=-1, axes=(1,2)))
+    # Other 3 orientations: Rotate around x-axis.
+    result.append(np.rot90(left_pc, k=1, axes=(2,0)))
+    result.append(np.rot90(left_pc, k=2, axes=(2,0)))
+    result.append(np.rot90(left_pc, k=-1, axes=(2,0)))
 
-    # "Right" position
-    right_pc = np.rot90(pc, k=-1, axes=(0,2))
+    # "Right" position: Rotate right around y-axis. Original up-axis (= z-axis) has rotated to x-axis.
+    right_pc = np.rot90(pc, k=-1, axes=(1,0))
     result.append(right_pc)
-    # Other 3 orientations
-    result.append(np.rot90(right_pc, k=1, axes=(1,2)))
-    result.append(np.rot90(right_pc, k=2, axes=(1,2)))
-    result.append(np.rot90(right_pc, k=-1, axes=(1,2)))
+    # Other 3 orientations: Rotate around x-axis.
+    result.append(np.rot90(right_pc, k=1, axes=(2,0)))
+    result.append(np.rot90(right_pc, k=2, axes=(2,0)))
+    result.append(np.rot90(right_pc, k=-1, axes=(2,0)))
 
-    # # "Down" position
-    down_pc = np.rot90(pc, k=2, axes=(0,2))
+    # "Down" position: Rotate 180° around y-axis. Original up-axis (= z-axis) has rotated to (negative) z-axis.
+    down_pc = np.rot90(pc, k=2, axes=(1,0))
     result.append(down_pc)
-    # Other 3 orientations
-    result.append(np.rot90(down_pc, k=1, axes=(0,1)))
-    result.append(np.rot90(down_pc, k=2, axes=(0,1)))
-    result.append(np.rot90(down_pc, k=-1, axes=(0,1)))
+    # Other 3 orientations: Rotate around z-axis.
+    result.append(np.rot90(down_pc, k=1, axes=(1,2)))
+    result.append(np.rot90(down_pc, k=2, axes=(1,2)))
+    result.append(np.rot90(down_pc, k=-1, axes=(1,2)))
 
-    # "Forward position"
-    forward_pc = np.rot90(pc, k=-1, axes=(1,2))
+    # "Forward position": Rotate right around x-axis. Original up-axis (= z-axis) has rotated to y-axis.
+    forward_pc = np.rot90(pc, k=-1, axes=(2,0))
     result.append(forward_pc)
-    # Other 3 orientations
-    result.append(np.rot90(forward_pc, k=1, axes=(0,2)))
-    result.append(np.rot90(forward_pc, k=2, axes=(0,2)))
-    result.append(np.rot90(forward_pc, k=-1, axes=(0,2)))
+    # Other 3 orientations: Rotate around y-axis.
+    result.append(np.rot90(forward_pc, k=1, axes=(1,0)))
+    result.append(np.rot90(forward_pc, k=2, axes=(1,0)))
+    result.append(np.rot90(forward_pc, k=-1, axes=(1,0)))
 
-    # "Backward position"
-    backward_pc = np.rot90(pc, k=1, axes=(1,2))
+    # "Backward position": Rotate left around x-axis. Original up-axis (= z-axis) has rotated to (negative) y-axis.
+    backward_pc = np.rot90(pc, k=1, axes=(2,0))
     result.append(backward_pc)
-    # Other 3 orientations
-    result.append(np.rot90(backward_pc, k=1, axes=(0,2)))
-    result.append(np.rot90(backward_pc, k=2, axes=(0,2)))
-    result.append(np.rot90(backward_pc, k=-1, axes=(0,2)))
+    # Other 3 orientations: Rotate around y-axis.
+    result.append(np.rot90(backward_pc, k=1, axes=(1,0)))
+    result.append(np.rot90(backward_pc, k=2, axes=(1,0)))
+    result.append(np.rot90(backward_pc, k=-1, axes=(1,0)))
 
     return result
 
@@ -424,9 +425,6 @@ def main():
                 plot_variations(pc, i)
         transformations.append(get_tranformations(pc))
 
-    # Output:
-    # transformation count: 600
-    # [96, 72, 96, 96, 96, 144]
     print(f"transformation count: {sum(map(len, transformations))}")
     print(f"{list(map(len, transformations))}")
 
