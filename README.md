@@ -1,7 +1,11 @@
 # SomaCubeSolver
 Solver for puzzles[1] similar to Soma cube using backtracking algorithm (in Julia and in Python).
 
-[1] See [cube_puzzle.jpg](cube_puzzle.jpg). It's a puzzle brought to work one day by one of my coworkers.
+[1] See [cube_puzzle.jpg](cube_puzzle.jpg). It's a puzzle brought to work one day by one of my coworkers. It turns out to be the **Coffin’s Half-Hour Puzzle** (designed by Stewart Coffin in 1975). Sources:
+
+[Cubic Dissection and Related Puzzles by Robert A. Beeler, Ph.D.](https://faculty.etsu.edu/beelerr/cubic.pdf) (PDF file)
+
+[3D printing model on website Maker World](https://makerworld.com/de/models/813099-half-hour-puzzle-cube#profileId-754893)
 
 Required packages
 ------------
@@ -15,7 +19,7 @@ Command line parameters
 
 **"--all-solutions":** Find all solutions instead only the first one.
 
-**"--normal-cube":** Find solution for the normal Soma cube (see Wikipedia page [https://en.wikipedia.org/wiki/Soma_cube](https://en.wikipedia.org/wiki/Soma_cube)) instead of the one in my workspace (see [cube_puzzle.jpg](cube_puzzle.jpg)).
+**"--normal-cube":** Find solution for the normal Soma cube (see Wikipedia page [https://en.wikipedia.org/wiki/Soma_cube](https://en.wikipedia.org/wiki/Soma_cube)) instead of the Coffin’s Half-Hour Puzzle (see [cube_puzzle.jpg](cube_puzzle.jpg)).
 
 Code / Algorithmus description
 ------------
@@ -92,11 +96,14 @@ Clashing polycubes are checked by whether the sum of polycube matrices has an el
 
 
 ### Result groups
-The results from the previous step usually contain groups of solutions where all solutions within a groups are only a rotated version of another within the same group. The result groups can be determined by trying all 24 possible rotations of every result and check whether one of these rotations will lead to another result already in the new list. 
+The results from the previous step usually contain groups of solutions where all solutions within a groups are only a rotated version of another within the same group. The result groups can be determined by trying all 24 possible rotations of every result and check whether one of these rotations will lead to another result already in the new list.
 
-|  | Result count | Distinct result count ( = groups) | Execution time (Julia) [2] | Execution time (Python) |
+|  | Result count | Distinct result count ( = groups) | Execution time (Julia) [2, 3] | Execution time (Python) [2]|
 | --- | --- | --- | --- | --- |
-| Puzzle cube from coworker | 24 | 1 | 23.0 s | 21.5 s |
-| Soma cube | 11520 | 480 | 75.8 s | 1846 s |
+| Coffin’s Half-Hour Puzzle | 24 | 1 | 23.1 s / 3.75 s | 21.6 s / 10.9 s |
+| Soma cube | 11520 | 480 | 49.9 s / 20.4 s | 1013 s / 493 s |
 
-[2] Initialization and usage of Plots.jl (for plotting) in Julia seems to be a performance bottleneck. And it is even worse on Windows. Without code related to Plots.jl, execution time is reduced by ca. 17 s.
+[2] Measurements on differents machines:<br>
+2a) Windows 10; CPU: AMD Ryzen 7 4700U; RAM: 16.0 GB RAM<br>
+2b) Linux Mint 21.3; CPU: 13th Gen Intel(C) Core(TM) i5-13400 x 10; RAM: 15.3 GiB<br>
+[3] Initialization and usage of Plots.jl (for plotting) in Julia seems to be a performance bottleneck. And it is even worse on Windows. Without code related to Plots.jl, execution time is reduced by ca. 17 s.

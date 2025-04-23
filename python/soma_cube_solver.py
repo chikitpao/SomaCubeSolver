@@ -283,7 +283,7 @@ def calculate_solutions(all_solutions:bool, temp_matrix:np.ndarray, temp_result:
     transformations:list[list[np.ndarray]], results:list[list[np.ndarray]]):
     if not all_solutions and results:
         return
-    
+
     if not transformations:
         return
 
@@ -300,7 +300,7 @@ def calculate_solutions(all_solutions:bool, temp_matrix:np.ndarray, temp_result:
                 return
         else:
             calculate_solutions(all_solutions, temp, temp_result, transformations[1:], results)
-        
+
         temp -= t
         temp_result.pop()
 
@@ -366,44 +366,49 @@ def main():
          [0, 1, 0],
          [0, 1, 0]]
     ]
+    # REMARK: It could improve performance a little if I had swapped the first
+    # polycube with the second, but it's only about a few hundredths of a
+    # second. I decided against it since I've used the figure numbering in my
+    # notes and the second polycube (T-shape) is less interesting for rotations.
+    #
     # => transformation count: 600
     # => [96, 72, 96, 96, 96, 144]
     # => Result count: 24
     # => Distinct result count: 1
-    # => Time elapsed: 21.532670736312866 s
+    # => Time elapsed: 21.556430101394653 s
 
     raw_polycubes_normal = [
         [[3, 1, 0],
          [1, 0, 0],
          [0, 0, 0]],
-        [[1, 1, 0],
-         [0, 1, 0],
-         [0, 1, 0]],
-        [[1, 3, 0],
-         [1, 0, 0],
-         [0, 0, 0]],
-        [[3, 1, 0],
+        [[1, 1, 1],
          [0, 1, 0],
          [0, 0, 0]],
         [[0, 1, 0],
          [1, 1, 0],
          [1, 0, 0]],
+        [[3, 1, 0],
+         [0, 1, 0],
+         [0, 0, 0]],
+        [[1, 3, 0],
+         [1, 0, 0],
+         [0, 0, 0]],
         [[1, 1, 0],
          [0, 1, 0],
          [0, 0, 0]],
-        [[1, 1, 1],
+        [[1, 1, 0],
          [0, 1, 0],
-         [0, 0, 0]],
+         [0, 1, 0]],
     ]
     # => transformation count: 688
-    # => [64, 144, 96, 96, 72, 144, 72]
+    # => [64, 72, 72, 96, 96, 144, 144]
     # => Result count: 11520
     # => Distinct result count: 480
-    # => Time elapsed: 1846.049610376358 s
+    # => Time elapsed: 1013.0199444293976 s
 
     raw_polycubes = raw_polycubes_normal if normal_cube else raw_polycubes_custom
 
-    # # Create directories for output files.
+    # Create directories for output files.
     if with_tests and not os.path.exists(TEST_PATH):
         os.makedirs(TEST_PATH)
     if not os.path.exists(RESULT_PATH):
@@ -434,9 +439,10 @@ def main():
     print("Result:")
     print(first_result)
     print(sum([i * r for i, r in enumerate(first_result)]))
-    
+
     if all_solutions:
         print(f"Result count: {len(results)}")
+        print(f"Time elapsed so far: {time.time() - start_time} s")
         result_groups = calculate_result_groups(results)
         print(f"Distinct result count: {len(result_groups)}")
 

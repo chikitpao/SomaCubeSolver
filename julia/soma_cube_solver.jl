@@ -213,8 +213,8 @@ function get_tranformations(polycube::Array{Int64, 3})::Set{Array{Int64, 3}}
     return result
 end
 
-function calculate_solutions(all_solutions::Bool, temp_matrix::Array{Int64, 3}, 
-    temp_result::Vector{Array{Int64, 3}}, transformations::Vector{Set{Array{Int64, 3}}}, 
+function calculate_solutions(all_solutions::Bool, temp_matrix::Array{Int64, 3},
+    temp_result::Vector{Array{Int64, 3}}, transformations::Vector{Set{Array{Int64, 3}}},
     results::Vector{Vector{Array{Int64, 3}}})
     if !all_solutions && !isempty(results)
         return
@@ -272,6 +272,8 @@ function calculate_result_groups(results::Vector{Vector{Array{Int64, 3}}})::Vect
 end
 
 function main()
+    start_time = time()
+
     with_tests = false
     all_solutions = false
     normal_cube = false
@@ -314,40 +316,45 @@ function main()
          0 1 0
          0 1 0],
     ]
+    # REMARK: It could improve performance a little if I had swapped the first
+    # polycube with the second, but it's only about a few hundredths of a
+    # second. I decided against it since I've used the figure numbering in my
+    # notes and the second polycube (T-shape) is less interesting for rotations.
+    #
     # => transformation count: 600
     # => [96, 72, 96, 96, 96, 144]
     # => Result count: 24
     # => Distinct result count: 1
-    # => 23.022160 seconds (17.25 M allocations: 1.591 GiB, 0.82% gc time, 17.88% compilation time)
+    # => 23.069183 seconds (17.32 M allocations: 1.594 GiB, 0.82% gc time, 18.33% compilation time)
     raw_polycubes_normal = [
         [3 1 0
          1 0 0
          0 0 0],
-        [1 1 0
-         0 1 0
-         0 1 0],
-        [1 3 0
-         1 0 0
-         0 0 0],
-        [3 1 0
+        [1 1 1
          0 1 0
          0 0 0],
         [0 1 0
          1 1 0
          1 0 0],
+        [3 1 0
+         0 1 0
+         0 0 0],
+        [1 3 0
+         1 0 0
+         0 0 0],
         [1 1 0
          0 1 0
          0 0 0],
-        [1 1 1
+        [1 1 0
          0 1 0
-         0 0 0],
+         0 1 0],
     ]
     # => transformation count: 688
-    # => [64, 144, 96, 96, 72, 144, 72]
+    # => [64, 72, 72, 96, 96, 144, 144]
     # => Result count: 11520
     # => Distinct result count: 480
-    # => 75.760636 seconds (742.56 M allocations: 90.691 GiB, 11.29% gc time, 5.56% compilation time)
-    
+    # => 49.936258 seconds (394.44 M allocations: 44.461 GiB, 7.98% gc time, 8.53% compilation time)
+
     raw_polycubes = normal_cube ? raw_polycubes_normal : raw_polycubes_custom
 
     # Output: typeof(raw_polycubes): Vector{Matrix{Int64}}
@@ -395,9 +402,10 @@ function main()
     first_result = first(results)
     println(first_result)
     println(sum([i * r for (i, r) ∈ enumerate(first_result)]))
-    
+
     if all_solutions
         println("Result count: $(length(results))")
+        println("Time elapsed so far: ", time() - start_time, " s")
         result_groups = calculate_result_groups(results)
         println("Distinct result count: $(length(result_groups))")
     end
@@ -411,6 +419,8 @@ function main()
     for (i, pc) ∈ enumerate(first_result)
         plot_polycube(template, pc, i, RESULT_PATH * "Result$i" * ".png")
     end
+
+    println("Time elapsed: ", time() - start_time, " s")
 end
 
 @time main()
