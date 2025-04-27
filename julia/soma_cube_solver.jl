@@ -3,6 +3,7 @@
 # Author: Chi-Kit Pao
 
 using Plots; gr()
+using DataStructures
 
 TEST_PATH = "test/"
 RESULT_PATH = "result/"
@@ -243,8 +244,104 @@ function calculate_solutions(all_solutions::Bool, temp_matrix::Array{Int64, 3},
     end
 end
 
+
+@enum TransformFunc ROTL90 ROTR90 ROT180
+struct Transform
+    func_id::TransformFunc
+    dims::Vector{Int64}
+end
+
+struct TransformCenterPiece
+    id::Int64
+    center_piece1::Int64
+    center_piece2::Int64
+    transform_normal::Vector{Transform}
+    transform_opposite::Vector{Transform}
+end
+
+function calculate_representation(result::Array{Int64, 3})::Union{Nothing, Array{Int64, 3}}
+    # +x, -x, +y, -y, +z, -z
+    center_pieces = [result[3, 2, 2], result[1, 2, 2], result[2, 3, 2], result[2, 1, 2],
+        result[2, 2, 3], result[2, 2, 1]]
+    s = DefaultDict{Int64,Int64}(0)
+    for cp ∈ center_pieces
+        s[cp] += 1
+    end
+
+    pairs = [TransformCenterPiece(1, center_pieces[1], center_pieces[3], [Transform(ROTR90, [2,3]), Transform(ROTL90, [1,3])], [Transform(ROTL90, [2,3])]), # (x, y), (y, x)
+        TransformCenterPiece(2, center_pieces[1], center_pieces[4], [Transform(ROTL90, [2,3]), Transform(ROTL90, [1,3])], [Transform(ROTR90, [2,3])]), # (x, -y), (-y, x)
+        TransformCenterPiece(3, center_pieces[1], center_pieces[5], [Transform(ROTR90, [1,3]), Transform(ROT180, [2,3])], []),  # (x, z), (z, x)
+        TransformCenterPiece(4, center_pieces[1], center_pieces[6], [Transform(ROTL90, [1,3])], [Transform(ROT180, [1,3]), Transform(ROT180, [1,2])]), # (x, -z), (-z, x)
+        TransformCenterPiece(5, center_pieces[2], center_pieces[3], [Transform(ROTL90, [2,3]), Transform(ROTR90, [1,3])], [Transform(ROTR90, [2,3]), Transform(ROT180, [1,3])]), # (-x, y), (y, -x)
+        TransformCenterPiece(6, center_pieces[2], center_pieces[4], [Transform(ROTR90, [2,3]), Transform(ROTR90, [1,3])], [Transform(ROTL90, [2,3]), Transform(ROT180, [1,3])]), # (-x, -y), (-y, -x)
+        TransformCenterPiece(7, center_pieces[2], center_pieces[5], [Transform(ROTR90, [1,3])], [Transform(ROT180, [1,2])]), # (-x, z), (z, -x)
+        TransformCenterPiece(8, center_pieces[2], center_pieces[6], [Transform(ROTL90, [1,3]), Transform(ROT180, [2,3])], [Transform(ROT180, [1,3])]), # (-x, -z), (-z, -x)
+        TransformCenterPiece(9, center_pieces[3], center_pieces[5], [Transform(ROTR90, [1,3]), Transform(ROTL90, [2,3])], [Transform(ROTR90, [1,2])]), # (y, z), (z, y)
+        TransformCenterPiece(10, center_pieces[3], center_pieces[6], [Transform(ROTL90, [1,3]), Transform(ROTL90, [2,3])], [Transform(ROT180, [1,3]), Transform(ROTR90, [1,2])]), # (y, -z), (-z, y)
+        TransformCenterPiece(11, center_pieces[4], center_pieces[5], [Transform(ROTR90, [1,3]), Transform(ROTR90, [2,3])], [Transform(ROTL90, [1,2])]), # (-y, z), (z, -y)
+        TransformCenterPiece(12, center_pieces[4], center_pieces[6], [Transform(ROTL90, [1,3]), Transform(ROTR90, [2,3])], [Transform(ROT180, [1,3]), Transform(ROTL90, [1,2])])] # (-y, -z), (-z, -y)
+
+    # From the unique center piece values, find the smallest pair of adjacent
+    # center piece values and transform the cube in such a way so the smallest
+    # value is at the "up" position and the second smallest at the "right" position.
+    transform_values = nothing
+    for p ∈ pairs
+        if s[p.center_piece1] > 1 || s[p.center_piece2] > 1
+            continue
+        end
+        corrected_pair = p.center_piece1 < p.center_piece2 ?
+            (p.id, p.center_piece1, p.center_piece2) :
+            (-p.id, p.center_piece2, p.center_piece1)
+        if isnothing(transform_values)
+            transform_values = corrected_pair
+        elseif (corrected_pair[2], corrected_pair[3]) < (transform_values[2], transform_values[3])
+            transform_values = corrected_pair
+        end
+    end
+    if !isnothing(transform_values)
+        transformations = transform_values[1] > 0 ?
+            pairs[transform_values[1]].transform_normal :
+            pairs[-transform_values[1]].transform_opposite
+        representation = result
+        for t ∈ transformations
+            if t.func_id == ROTL90
+                representation = mapslices(rotl90, representation, dims=t.dims)
+            elseif t.func_id == ROTR90
+                representation = mapslices(rotr90, representation, dims=t.dims)
+            else
+                @assert t.func_id == ROT180
+                representation = mapslices(rot180, representation, dims=t.dims)
+            end
+        end
+        # Check "up" and "right" values
+        # @assert transform_values[2] == representation[2,2,3] && transform_values[3] == representation[3,2,2]
+        return representation
+    end
+    return nothing
+end
+
 function calculate_result_groups(results::Vector{Vector{Array{Int64, 3}}})::Vector{Array{Int64, 3}}
     result_groups = Vector{Array{Int64, 3}}()
+
+    # Try to find representations for result
+    representations = Set{Array{Int64, 3}}()
+    for result ∈ results
+        result2 = sum([i * r for (i, r) ∈ enumerate(result)])
+        representation = calculate_representation(result2)
+        if isnothing(representation)
+            empty!(representations)
+            break
+        else
+            push!(representations, representation)
+        end
+    end
+
+    if !isempty(representations)
+        return collect(representations)
+    end
+
+    # Fallback when cannot find representation for some results
+    println("Fallback since cannot find representation for some results.")
     for result ∈ results
         result2 = sum([i * r for (i, r) ∈ enumerate(result)])
         if isempty(result_groups)
@@ -325,7 +422,7 @@ function main()
     # => [96, 72, 96, 96, 96, 144]
     # => Result count: 24
     # => Distinct result count: 1
-    # => 23.069183 seconds (17.32 M allocations: 1.594 GiB, 0.82% gc time, 18.33% compilation time)
+    # => 23.261966 seconds (17.19 M allocations: 1.591 GiB, 0.78% gc time, 18.20% compilation time)
     raw_polycubes_normal = [
         [3 1 0
          1 0 0
@@ -353,7 +450,7 @@ function main()
     # => [64, 72, 72, 96, 96, 144, 144]
     # => Result count: 11520
     # => Distinct result count: 480
-    # => 49.936258 seconds (394.44 M allocations: 44.461 GiB, 7.98% gc time, 8.53% compilation time)
+    # => 43.844851 seconds (326.88 M allocations: 42.572 GiB, 8.54% gc time, 9.63% compilation time)
 
     raw_polycubes = normal_cube ? raw_polycubes_normal : raw_polycubes_custom
 

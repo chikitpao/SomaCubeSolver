@@ -62,7 +62,6 @@ A polycube can have **maximum 24 different transformations using rotation**. Sim
     mapslices(rotr90, pc, dims=[1,2])
 ```
 
-
 **Python (NumPy)** Rotation is done by the functions *numpy.rot90*, which rotates the matrix in the plane specified by the parameter *axes*. E.g. *axes=(0,1)* means rotate axes 2 in the direction from axis 0 to axis 1, which will cause a counter-clockwise turn. Rotation count is defined by the paramater *k* (which can also be negative). E.g. Apply rotation to matrix *pc* counter-clockwise around axis 2 for one time, two times, and minus one time respectively:
 ```
     numpy.rot90(pc, k=1, axes=(0,1))
@@ -72,8 +71,7 @@ A polycube can have **maximum 24 different transformations using rotation**. Sim
 
 We also need to move the rotated polycube along x-, y- and z-axis (i.e. **translation**). For this purpose, the polycube is shifted to the lowest possible position so every movement with non-negative delta in all axes is a valid translation.
 
-**Julia**: *circshift(rotation_mod, (dx, dy, dz)))*
-
+**Julia**: *circshift(rotation_mod, (dx, dy, dz)))* <br>
 **Python (NumPy)**: *np.roll(rotation_mod, (dz, dx, dy), (0, 1, 2)))*
 
 It's possible that different transformations of the polycube produce the same result, so we want to eliminate duplicated transformations. Whereas **Julia matrices (type: *Array{Int64, 3}*)** can be used directly with a **Set**, **NumPy matrices (type *numpy.ndarray*) are not hashable** so putting it into a set will cause an *TypeError*. A possible approach is to **remove duplicated values by not inserting them into a new list:**
@@ -90,18 +88,19 @@ Solutions are calculated using **backtracking algorithm**: Partial solutions are
 
 Clashing polycubes are checked by whether the sum of polycube matrices has an element with value greater than one. So if variable *temp* is the sum, check is done like this:
 
-**Julia**: *maximum(temp) > 1*
-
+**Julia**: *maximum(temp) > 1* <br>
 **Python (NumPy)**: *numpy.max(temp) > 1*
 
 
 ### Result groups
-The results from the previous step usually contain groups of solutions where all solutions within a groups are only a rotated version of another within the same group. The result groups can be determined by trying all 24 possible rotations of every result and check whether one of these rotations will lead to another result already in the new list.
+The results from the previous step usually contain groups of solutions where all solutions within a groups are only a rotated version of another within the same group.
+
+The result groups can be determined by trying all 24 possible rotations of every result and check whether one of these rotations will lead to another result already in the new list. For both Coffin’s Half-Hour Puzzle and Soma cube, there are **pairs of adjacent center piece with unique values** (both values only occur once in all the center pieces), so **the result can be transformed so the pair of center pieces with the smallest values point to specific directions** (e.g. the smallest value is at the "up" position and the second smallest at the "right" position). This transformed cube serves as a **representation** for further checking so we don't need to try all 24 possible rotations.
 
 |  | Result count | Distinct result count ( = groups) | Execution time (Julia) [2, 3] | Execution time (Python) [2]|
 | --- | --- | --- | --- | --- |
-| Coffin’s Half-Hour Puzzle | 24 | 1 | 23.1 s / 3.75 s | 21.6 s / 10.9 s |
-| Soma cube | 11520 | 480 | 49.9 s / 20.4 s | 1013 s / 493 s |
+| Coffin’s Half-Hour Puzzle | 24 | 1 | 23.3 s / 3.79 s | 21.8 s / 10.9 s |
+| Soma cube | 11520 | 480 | 43.8 s / 16.5 s | 792 s / 366 s |
 
 [2] Measurements on differents machines:<br>
 2a) Windows 10; CPU: AMD Ryzen 7 4700U; RAM: 16.0 GB RAM<br>

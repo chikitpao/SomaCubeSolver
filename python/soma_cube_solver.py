@@ -2,7 +2,10 @@
 # Soma cube solver
 # Author: Chi-Kit Pao
 
+from collections import defaultdict
 from copy import deepcopy
+from dataclasses import dataclass
+from enum import Enum
 import itertools
 import matplotlib.pyplot as plt
 import numpy as np
@@ -304,8 +307,103 @@ def calculate_solutions(all_solutions:bool, temp_matrix:np.ndarray, temp_result:
         temp -= t
         temp_result.pop()
 
+
+class TransformFunc(Enum):
+    ROTL90 = 1
+    ROTR90 = 2
+    ROT180 = 3
+
+@dataclass
+class Transform:
+    func_id: TransformFunc
+    axes: tuple[int, int]
+
+@dataclass
+class TransformCenterPiece:
+    id: int
+    center_piece1: int
+    center_piece2: int
+    transform_normal: list[Transform]
+    transform_opposite: list[Transform]
+
+def calculate_representation(result):
+    # +x, -x, +y, -y, +z, -z
+    center_pieces = [result[1, 2, 1], result[1, 0, 1], result[1, 1, 2], result[1, 1, 0],
+        result[2, 1, 1], result[0, 1, 1]]
+    s = defaultdict(int)
+    for cp in center_pieces:
+        s[cp] += 1
+
+    pairs = [TransformCenterPiece(1, center_pieces[0], center_pieces[2], [Transform(TransformFunc.ROTR90, (2,0)), Transform(TransformFunc.ROTL90, (1,0))], [Transform(TransformFunc.ROTL90, (2,0))]), # (x, y), (y, x)
+        TransformCenterPiece(2, center_pieces[0], center_pieces[3], [Transform(TransformFunc.ROTL90, (2,0)), Transform(TransformFunc.ROTL90, (1,0))], [Transform(TransformFunc.ROTR90, (2,0))]), # (x, -y), (-y, x)
+        TransformCenterPiece(3, center_pieces[0], center_pieces[4], [Transform(TransformFunc.ROTR90, (1,0)), Transform(TransformFunc.ROT180, (2,0))], []),  # (x, z), (z, x)
+        TransformCenterPiece(4, center_pieces[0], center_pieces[5], [Transform(TransformFunc.ROTL90, (1,0))], [Transform(TransformFunc.ROT180, (1,0)), Transform(TransformFunc.ROT180, (1,2))]), # (x, -z), (-z, x)
+        TransformCenterPiece(5, center_pieces[1], center_pieces[2], [Transform(TransformFunc.ROTL90, (2,0)), Transform(TransformFunc.ROTR90, (1,0))], [Transform(TransformFunc.ROTR90, (2,0)), Transform(TransformFunc.ROT180, (1,0))]), # (-x, y), (y, -x)
+        TransformCenterPiece(6, center_pieces[1], center_pieces[3], [Transform(TransformFunc.ROTR90, (2,0)), Transform(TransformFunc.ROTR90, (1,0))], [Transform(TransformFunc.ROTL90, (2,0)), Transform(TransformFunc.ROT180, (1,0))]), # (-x, -y), (-y, -x)
+        TransformCenterPiece(7, center_pieces[1], center_pieces[4], [Transform(TransformFunc.ROTR90, (1,0))], [Transform(TransformFunc.ROT180, (1,2))]), # (-x, z), (z, -x)
+        TransformCenterPiece(8, center_pieces[1], center_pieces[5], [Transform(TransformFunc.ROTL90, (1,0)), Transform(TransformFunc.ROT180, (2,0))], [Transform(TransformFunc.ROT180, (1,0))]), # (-x, -z), (-z, -x)
+        TransformCenterPiece(9, center_pieces[2], center_pieces[4], [Transform(TransformFunc.ROTR90, (1,0)), Transform(TransformFunc.ROTL90, (2,0))], [Transform(TransformFunc.ROTR90, (1,2))]), # (y, z), (z, y)
+        TransformCenterPiece(10, center_pieces[2], center_pieces[5], [Transform(TransformFunc.ROTL90, (1,0)), Transform(TransformFunc.ROTL90, (2,0))], [Transform(TransformFunc.ROT180, (1,0)), Transform(TransformFunc.ROTR90, (1,2))]), # (y, -z), (-z, y)
+        TransformCenterPiece(11, center_pieces[3], center_pieces[4], [Transform(TransformFunc.ROTR90, (1,0)), Transform(TransformFunc.ROTR90, (2,0))], [Transform(TransformFunc.ROTL90, (1,2))]), # (-y, z), (z, -y)
+        TransformCenterPiece(12, center_pieces[3], center_pieces[5], [Transform(TransformFunc.ROTL90, (1,0)), Transform(TransformFunc.ROTR90, (2,0))], [Transform(TransformFunc.ROT180, (1,0)), Transform(TransformFunc.ROTL90, (1,2))])] # (-y, -z), (-z, -y)
+
+    # From the unique center piece values, find the smallest pair of adjacent
+    # center piece values and transform the cube in such a way so the smallest
+    # value is at the "up" position and the second smallest at the "right" position.
+    transform_values = None
+    for p in pairs:
+        if s[p.center_piece1] > 1 or s[p.center_piece2] > 1:
+            continue
+        corrected_pair =  (p.id, p.center_piece1, p.center_piece2) if p.center_piece1 < p.center_piece2 else (-p.id, p.center_piece2, p.center_piece1)
+        if transform_values is None:
+            transform_values = corrected_pair
+        elif (corrected_pair[1], corrected_pair[2]) < (transform_values[1], transform_values[2]):
+            transform_values = corrected_pair
+
+    if transform_values is not None:
+        transformations = pairs[transform_values[0]-1].transform_normal if transform_values[0] > 0 else pairs[-transform_values[0]-1].transform_opposite
+        representation = result
+        for t in transformations:
+            if t.func_id == TransformFunc.ROTL90:
+                representation = np.rot90(representation, k=1, axes=t.axes)
+            elif t.func_id == TransformFunc.ROTR90:
+                representation = np.rot90(representation, k=-1, axes=t.axes)
+            else:
+                assert t.func_id == TransformFunc.ROT180
+                representation = np.rot90(representation, k=2, axes=t.axes)
+
+        # Check "up" and "right" values
+        # assert transform_values[1] == representation[2,1,1] and transform_values[2] == representation[1,2,1]
+        return representation
+
+    return None
+
 def calculate_result_groups(results):
     result_groups = []
+
+    # Try to find representations for result
+    representations = []
+    for result in results:
+        result2 = sum([i * r for i, r in enumerate(result)])
+        representation = calculate_representation(result2)
+        if representation is None:
+            representations.clear()
+            break
+        else:
+            is_duplicate = False
+            for r in representations:
+                if np.array_equal(r, representation):
+                    is_duplicate = True
+                    break
+            if not is_duplicate:
+                representations.append(representation)
+
+    if representations:
+        return representations
+
+    # Fallback when cannot find representation for some results
+    print("Fallback since cannot find representation for some results.")
+
     for result in results:
         result2 = sum([i * r for i, r in enumerate(result)])
         if not result_groups:
@@ -375,7 +473,7 @@ def main():
     # => [96, 72, 96, 96, 96, 144]
     # => Result count: 24
     # => Distinct result count: 1
-    # => Time elapsed: 21.556430101394653 s
+    # => Time elapsed: 21.758848667144775 s
 
     raw_polycubes_normal = [
         [[3, 1, 0],
@@ -404,7 +502,7 @@ def main():
     # => [64, 72, 72, 96, 96, 144, 144]
     # => Result count: 11520
     # => Distinct result count: 480
-    # => Time elapsed: 1013.0199444293976 s
+    # => Time elapsed: 791.8525195121765 s
 
     raw_polycubes = raw_polycubes_normal if normal_cube else raw_polycubes_custom
 
