@@ -182,7 +182,7 @@ function get_rotations(polycube::Array{Int64, 3})::Set{Array{Int64, 3}}
     return result
 end
 
-function get_tranformations(polycube::Array{Int64, 3})::Set{Array{Int64, 3}}
+function get_transformations(polycube::Array{Int64, 3})::Set{Array{Int64, 3}}
     result = Set{Array{Int64, 3}}()
     rotations = get_rotations(polycube)
     for rotation ∈ rotations
@@ -215,7 +215,7 @@ function get_tranformations(polycube::Array{Int64, 3})::Set{Array{Int64, 3}}
 end
 
 function calculate_solutions(all_solutions::Bool, temp_matrix::Array{Int64, 3},
-    temp_result::Vector{Array{Int64, 3}}, transformations::Vector{Set{Array{Int64, 3}}},
+    temp_result::Vector{Array{Int64, 3}}, transformations::Vector{Vector{Array{Int64, 3}}},
     results::Vector{Vector{Array{Int64, 3}}})
     if !all_solutions && !isempty(results)
         return
@@ -238,6 +238,9 @@ function calculate_solutions(all_solutions::Bool, temp_matrix::Array{Int64, 3},
             end
         else
             calculate_solutions(all_solutions, temp, temp_result, transformations[2:end], results)
+            if !all_solutions && !isempty(results)
+                return
+            end
         end
         pop!(temp_result)
         temp -= t
@@ -347,7 +350,7 @@ function calculate_result_groups(results::Vector{Vector{Array{Int64, 3}}})::Vect
         if isempty(result_groups)
             push!(result_groups, result2)
         else
-            result_transformations = get_tranformations(result2)
+            result_transformations = get_transformations(result2)
             is_duplicate = false
             for t ∈ result_transformations
                 for test_element ∈ result_groups
@@ -478,7 +481,7 @@ function main()
         [0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1],
         [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1])
 
-    transformations = Vector{Set{Array{Int64, 3}}}()
+    transformations = Vector{Vector{Array{Int64, 3}}}()
     for (i, pc) ∈ enumerate(polycubes)
         if with_tests
             # "Up" position
@@ -487,7 +490,7 @@ function main()
                 plot_variations(template, pc, i)
             end
         end
-        push!(transformations, get_tranformations(pc))
+        push!(transformations, collect(get_transformations(pc)))
     end
 
     println("transformation count: $(sum(map(length, transformations)))")

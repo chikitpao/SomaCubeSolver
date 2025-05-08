@@ -245,7 +245,7 @@ def get_rotations(polycube:np.ndarray) -> list[np.ndarray]:
 
     return result
 
-def get_tranformations(polycube:np.ndarray) -> list[np.ndarray]:
+def get_transformations(polycube:np.ndarray) -> list[np.ndarray]:
     # REMARK: 'numpy.ndarray' is not hashable, so put it into a
     # set will cause error:
     # TypeError: unhashable type: 'numpy.ndarray'
@@ -303,6 +303,8 @@ def calculate_solutions(all_solutions:bool, temp_matrix:np.ndarray, temp_result:
                 return
         else:
             calculate_solutions(all_solutions, temp, temp_result, transformations[1:], results)
+            if not all_solutions and results:
+                return
 
         temp -= t
         temp_result.pop()
@@ -409,7 +411,7 @@ def calculate_result_groups(results):
         if not result_groups:
             result_groups.append(result2)
         else:
-            result_transformations = get_tranformations(result2)
+            result_transformations = get_transformations(result2)
             is_duplicate = False
             for t in result_transformations:
                 for test_element in result_groups:
@@ -526,7 +528,7 @@ def main():
             plot_polycube(pc, i, TEST_PATH + f"Figure{i}_up.png")
             if i == 0:
                 plot_variations(pc, i)
-        transformations.append(get_tranformations(pc))
+        transformations.append(get_transformations(pc))
 
     print(f"transformation count: {sum(map(len, transformations))}")
     print(f"{list(map(len, transformations))}")
