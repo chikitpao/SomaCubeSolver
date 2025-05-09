@@ -7,6 +7,8 @@ Solver for puzzles[1] similar to Soma cube using backtracking algorithm (in Juli
 
 [3D printing model on website Maker World](https://makerworld.com/de/models/813099-half-hour-puzzle-cube#profileId-754893)
 
+See also my Repository [PulpExamples](https://github.com/chikitpao/PulpExamples) for a puzzle solver using linear programming (Python and library PuLP), which solves the problem more effectively.
+
 Required packages
 ------------
 **Julia:** Plots
@@ -97,12 +99,9 @@ The results from the previous step usually contain groups of solutions where all
 
 The result groups can be determined by trying all 24 possible rotations of every result and check whether one of these rotations will lead to another result already in the new list. For both Coffin’s Half-Hour Puzzle and Soma cube, there are **pairs of adjacent center piece with unique values** (both values only occur once in all the center pieces), so **the result can be transformed so the pair of center pieces with the smallest values point to specific directions** (e.g. the smallest value is at the "up" position and the second smallest at the "right" position). This transformed cube serves as a **representation** for further checking so we don't need to try all 24 possible rotations.
 
-|  | Result count | Distinct result count ( = groups) | Execution time (Julia) [2, 3] | Execution time (Python) [2]|
+|  | Result count | Distinct result count ( = groups) | Execution time (Julia) [2] | Execution time (Python) [2]|
 | --- | --- | --- | --- | --- |
-| Coffin’s Half-Hour Puzzle | 24 | 1 | 23.3 s / 3.79 s | 21.8 s / 10.9 s |
-| Soma cube | 11520 | 480 | 43.8 s / 16.5 s | 792 s / 366 s |
+| Coffin’s Half-Hour Puzzle | 24 | 1 | 3.78 s | 10.8 s |
+| Soma cube | 11520 | 480 | 16.1 s | 366 s |
 
-[2] Measurements on differents machines:<br>
-2a) Windows 10; CPU: AMD Ryzen 7 4700U; RAM: 16.0 GB RAM<br>
-2b) Linux Mint 21.3; CPU: 13th Gen Intel(C) Core(TM) i5-13400 x 10; RAM: 15.3 GiB<br>
-[3] Initialization and usage of Plots.jl (for plotting) in Julia seems to be a performance bottleneck. And it is even worse on Windows. Without code related to Plots.jl, execution time is reduced by ca. 17 s.
+[2] Measurement Linux Mint 21.3; CPU: 13th Gen Intel(C) Core(TM) i5-13400 x 10; RAM: 15.3 GiB
