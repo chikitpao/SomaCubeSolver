@@ -101,7 +101,7 @@ The result groups can be determined by trying all 24 possible rotations of every
 
 |  | Result count | Distinct result count ( = groups) | Execution time (Julia) [2] | Execution time (Python) [2]|
 | --- | --- | --- | --- | --- |
-| Coffin’s Half-Hour Puzzle | 24 | 1 | 3.78 s | 10.8 s |
-| Soma cube | 11520 | 480 | 16.1 s | 366 s |
+| Coffin’s Half-Hour Puzzle | 24 | 1 | 2.15 s | 10.0 s |
+| Soma cube | 11520 | 480 | 14.1 s | 366 s |
 
-[2] Measurement Linux Mint 21.3; CPU: 13th Gen Intel(C) Core(TM) i5-13400 x 10; RAM: 15.3 GiB
+[2] Time of calculation until plotting. Measurement Linux Mint 21.3; CPU: 13th Gen Intel(C) Core(TM) i5-13400 x 10; RAM: 15.3 GiB

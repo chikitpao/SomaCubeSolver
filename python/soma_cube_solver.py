@@ -80,43 +80,6 @@ def build_polycube(raw_polycube:list) -> np.ndarray:
                 result[layer, row, col] = int((v & (1 << layer)) != 0)
     return result
 
-def plot_cube(posx:int, posy:int, posz:int, id:int, ax):
-    # Output: type(ax)=<class 'matplotlib.axes._subplots.Axes3DSubplot'>
-    # print(f"{type(ax)=}")
-
-    r = [0,1]
-    X, Y = np.meshgrid(r, r)
-    one = np.array([[1, 1]])
-    X_ = X+posx
-    Y_ = Y+posy
-    Z1_ = X+posz
-    Z2_ = Y+posz
-    alpha_ = 0.1
-    wire_color = 'k'
-    linewidth_ = 1
-    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
-    color_ = colors[id]
-
-    # bottom and top
-    ax.plot_surface(X_, Y_, one*posz, alpha=alpha_, color=color_)
-    ax.plot_wireframe(X_, Y_, one*posz, color=wire_color, linewidth=linewidth_)
-    ax.plot_surface(X_, Y_, one*(posz+1), alpha=alpha_, color=color_)
-    ax.plot_wireframe(X_, Y_, one*(posz+1), color=wire_color, linewidth=linewidth_)
-    # left and right
-    ax.plot_surface(one*posx, Y_, Z1_, alpha=alpha_, color=color_)
-    ax.plot_wireframe(one*posx, Y_, Z1_, color=wire_color, linewidth=linewidth_)
-    ax.plot_surface(one*(posx+1), Y_, Z1_, alpha=alpha_, color=color_)
-    ax.plot_wireframe(one*(posx+1), Y_, Z1_, color=wire_color, linewidth=linewidth_)
-    # front and back
-    ax.plot_surface(X_, one*posy, Z2_, alpha=alpha_, color=color_)
-    ax.plot_wireframe(X_, one*posy, Z2_, color=wire_color, linewidth=linewidth_)
-    ax.plot_surface(X_, one*(posy+1), Z2_, alpha=alpha_, color=color_)
-    ax.plot_wireframe(X_, one*(posy+1), Z2_, color=wire_color, linewidth=linewidth_)
-
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    ax.set_zlabel("z")
-
 def add_subplot(fig):
     ax = fig.add_subplot(111, projection='3d')
     # ax.set_aspect('equal', adjustable='box')
@@ -132,11 +95,51 @@ def plot_polycube(polycube:np.ndarray, id:int, file_name:str, ax=None):
         fig = plt.figure()
         ax = add_subplot(fig)
 
-    for x in range(3):
-        for y in range(3):
-            for z in range(3):
-                if polycube[z, x, y] == 1:
-                    plot_cube(x, y, z, id, ax)
+    r = [0,1]
+    alpha_ = 0.1 if stand_alone else 0.3
+    wire_color = 'k'
+    linewidth_ = 1
+    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'purple', 'pink', 'w']
+    color_ = colors[id]
+
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    ax.set_zlabel("z")
+
+    for posx, posy, posz in itertools.product(list(range(3)), repeat=3):
+        if polycube[posz, posx, posy] != 1:
+            continue
+
+        X, Y = np.meshgrid(r, r)
+        one = np.array([[1, 1]])
+        X_ = X+posx
+        Y_ = Y+posy
+        Z1_ = X+posz
+        Z2_ = Y+posz
+
+        # REMARK: Don't draw inner surfaces.
+        # bottom and top
+        if posz == 0 or polycube[posz-1][posx][posy] != 1:
+            ax.plot_surface(X_, Y_, one*posz, alpha=alpha_, color=color_)
+        ax.plot_wireframe(X_, Y_, one*posz, color=wire_color, linewidth=linewidth_)
+        if posz == 2 or polycube[posz+1][posx][posy] != 1:
+            ax.plot_surface(X_, Y_, one*(posz+1), alpha=alpha_, color=color_)
+        ax.plot_wireframe(X_, Y_, one*(posz+1), color=wire_color, linewidth=linewidth_)
+        # left and right
+        if posx == 0 or polycube[posz][posx-1][posy] != 1:
+            ax.plot_surface(one*posx, Y_, Z1_, alpha=alpha_, color=color_)
+        ax.plot_wireframe(one*posx, Y_, Z1_, color=wire_color, linewidth=linewidth_)
+        if posx == 2 or polycube[posz][posx+1][posy] != 1:
+            ax.plot_surface(one*(posx+1), Y_, Z1_, alpha=alpha_, color=color_)
+        ax.plot_wireframe(one*(posx+1), Y_, Z1_, color=wire_color, linewidth=linewidth_)
+        # front and back
+        if posy == 0 or polycube[posz][posx][posy-1] != 1:
+            ax.plot_surface(X_, one*posy, Z2_, alpha=alpha_, color=color_)
+        ax.plot_wireframe(X_, one*posy, Z2_, color=wire_color, linewidth=linewidth_)
+        if posy == 2 or polycube[posz][posx][posy+1] != 1:
+            ax.plot_surface(X_, one*(posy+1), Z2_, alpha=alpha_, color=color_)
+        ax.plot_wireframe(X_, one*(posy+1), Z2_, color=wire_color, linewidth=linewidth_)
+
 
     if stand_alone:
         plt.savefig(file_name)
@@ -475,7 +478,8 @@ def main():
     # => [96, 72, 96, 96, 96, 144]
     # => Result count: 24
     # => Distinct result count: 1
-    # => Time elapsed: 21.758848667144775 s
+    # Time elapsed (before plotting): 10.025808811187744 s
+    # Time elapsed: 10.86941933631897 s
 
     raw_polycubes_normal = [
         [[3, 1, 0],
@@ -504,15 +508,11 @@ def main():
     # => [64, 72, 72, 96, 96, 144, 144]
     # => Result count: 11520
     # => Distinct result count: 480
-    # => Time elapsed: 791.8525195121765 s
+    # Time elapsed (before plotting): 366.37138652801514 s
+    # Time elapsed: 367.2949261665344 s
+
 
     raw_polycubes = raw_polycubes_normal if normal_cube else raw_polycubes_custom
-
-    # Create directories for output files.
-    if with_tests and not os.path.exists(TEST_PATH):
-        os.makedirs(TEST_PATH)
-    if not os.path.exists(RESULT_PATH):
-        os.makedirs(RESULT_PATH)
 
     # Output: type(raw_polycubes)=<class 'list'>
     # print(f"{type(raw_polycubes)=}")
@@ -523,11 +523,6 @@ def main():
 
     transformations = []
     for i, pc in enumerate(polycubes):
-        if with_tests:
-            # "Up" position
-            plot_polycube(pc, i, TEST_PATH + f"Figure{i}_up.png")
-            if i == 0:
-                plot_variations(pc, i)
         transformations.append(get_transformations(pc))
 
     print(f"transformation count: {sum(map(len, transformations))}")
@@ -546,6 +541,22 @@ def main():
         result_groups = calculate_result_groups(results)
         print(f"Distinct result count: {len(result_groups)}")
 
+    print(f"Time elapsed (before plotting): {time.time() - start_time} s")
+
+    ### Plotting
+    # Create directories for output files.
+    if with_tests and not os.path.exists(TEST_PATH):
+        os.makedirs(TEST_PATH)
+    if not os.path.exists(RESULT_PATH):
+        os.makedirs(RESULT_PATH)
+
+    if with_tests:
+        for i, pc in enumerate(polycubes):
+            # "Up" position
+            plot_polycube(pc, i, TEST_PATH + f"Figure{i}_up.png")
+            if i == 0:
+                plot_variations(pc, i)
+
     fig = plt.figure()
     ax = add_subplot(fig)
     for i, pc in enumerate(first_result):
@@ -556,6 +567,13 @@ def main():
          plot_polycube(pc, i, RESULT_PATH + f"Result{i}.png")
 
     print(f"Time elapsed: {time.time() - start_time} s")
+
+    # Show result in GUI.
+    fig = plt.figure()
+    ax = add_subplot(fig)
+    for i, pc in enumerate(first_result):
+         plot_polycube(pc, i, "", ax)
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -636,7 +654,5 @@ if __name__ == "__main__":
 #   [5 2 2]
 #   [5 1 2]]]
 
-# Output of "time python3 soma_cube_solver.py":
-# real	0m1,897s
-# user	0m2,977s
-# sys	0m2,549s
+# Time elapsed (before plotting): 0.2074108123779297 s
+# Time elapsed: 1.04561448097229 s

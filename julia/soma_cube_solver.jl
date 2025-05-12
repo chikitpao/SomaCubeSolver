@@ -39,41 +39,65 @@ struct Template
     points_x::Vector{Int8}
     points_y::Vector{Int8}
     points_z::Vector{Int8}
-    connections::Vector{Tuple{Int64, Int64, Int64}}  # Must be Int64
     edges_x::Vector{Int8}
     edges_y::Vector{Int8}
     edges_z::Vector{Int8}
-end
-
-function plot_cube(template::Template, posx::Int64, posy::Int64, posz::Int64, id::Int64)
-    dx = posx - 1
-    dy = posy - 1
-    dz = posz - 1
-    scatter!((0.5 + dx, 0.5 + dy, 0.5 + dz); c=:red, ms=3, msw=0.1)
-    px = map(x -> x + dx, template.points_x)
-    py = map(x -> x + dy, template.points_y)
-    pz = map(x -> x + dz, template.points_z)
-    colors = palette(:tab10)
-    color = colors[id]
-    mesh3d!(px,py,pz; template.connections, proj_type=:persp, fc=color, lc=color, fa=0.1, lw=0, legend=false)
-    ex = map(x -> x + dx, template.edges_x)
-    ey = map(x -> x + dy, template.edges_y)
-    ez = map(x -> x + dz, template.edges_z)
-    plot!(ex,ey,ez; lc=:black, lw=0.5, lims=(0.0,3.25), xlabel="x", ylabel="y", zlabel="z")
+    connections_left::Vector{Tuple{Int64, Int64, Int64}}  # Must be Int64
+    connections_right::Vector{Tuple{Int64, Int64, Int64}}  # Must be Int64
+    connections_backward::Vector{Tuple{Int64, Int64, Int64}}  # Must be Int64
+    connections_forward::Vector{Tuple{Int64, Int64, Int64}}  # Must be Int64
+    connections_bottom::Vector{Tuple{Int64, Int64, Int64}}  # Must be Int64
+    connections_top::Vector{Tuple{Int64, Int64, Int64}}  # Must be Int64
 end
 
 function plot_polycube(template::Template, polycube::Array{Int64, 3}, id::Int64, file_name::String, stand_alone::Bool=true)
     if stand_alone
         plot()
     end
-    for x ∈ 1:3
-        for y ∈ 1:3
-            for z ∈ 1:3
-                if polycube[x, y, z] == 1
-                    plot_cube(template, x, y, z, id)
-                end
-            end
+
+    colors = palette(:tab10)
+    color = colors[id]
+    alpha_ = stand_alone ? 0.1 : 0.3
+
+    for (posx, posy, posz) in Iterators.product(Iterators.repeated((1:3), 3)...)
+        if polycube[posx, posy, posz] != 1
+            continue
         end
+
+        dx = posx - 1
+        dy = posy - 1
+        dz = posz - 1
+
+        #scatter!((0.5 + dx, 0.5 + dy, 0.5 + dz); c=:red, ms=3, msw=0.1)
+
+        # REMARK: Don't draw inner surfaces.
+        px = map(x -> x + dx, template.points_x)
+        py = map(x -> x + dy, template.points_y)
+        pz = map(x -> x + dz, template.points_z)
+
+        if posx == 1 || polycube[posx-1, posy, posz] != 1
+            mesh3d!(px,py,pz; connections=template.connections_left, proj_type=:persp, fc=color, lc=color, fa=alpha_, lw=0, legend=false)
+        end
+        if posx == 3 || polycube[posx+1, posy, posz] != 1
+            mesh3d!(px,py,pz; connections=template.connections_right, proj_type=:persp, fc=color, lc=color, fa=alpha_, lw=0, legend=false)
+        end
+        if posy == 1 || polycube[posx, posy-1, posz] != 1
+            mesh3d!(px,py,pz; connections=template.connections_backward, proj_type=:persp, fc=color, lc=color, fa=alpha_, lw=0, legend=false)
+        end
+        if posy == 3 || polycube[posx, posy+1, posz] != 1
+            mesh3d!(px,py,pz; connections=template.connections_forward, proj_type=:persp, fc=color, lc=color, fa=alpha_, lw=0, legend=false)
+        end
+        if posz == 1 || polycube[posx, posy, posz-1] != 1
+            mesh3d!(px,py,pz; connections=template.connections_bottom, proj_type=:persp, fc=color, lc=color, fa=alpha_, lw=0, legend=false)
+        end
+        if posz == 3 || polycube[posx, posy, posz+1] != 1
+            mesh3d!(px,py,pz; connections=template.connections_top, proj_type=:persp, fc=color, lc=color, fa=alpha_, lw=0, legend=false)
+        end
+
+        ex = map(x -> x + dx, template.edges_x)
+        ey = map(x -> x + dy, template.edges_y)
+        ez = map(x -> x + dz, template.edges_z)
+        plot!(ex,ey,ez; lc=:black, lw=0.5, lims=(0.0,3.25), xlabel="x", ylabel="y", zlabel="z")
     end
     if stand_alone
         savefig(file_name)
@@ -425,7 +449,10 @@ function main()
     # => [96, 72, 96, 96, 96, 144]
     # => Result count: 24
     # => Distinct result count: 1
-    # => 23.261966 seconds (17.19 M allocations: 1.591 GiB, 0.78% gc time, 18.20% compilation time)
+    # Time elapsed (before plotting): 2.145220994949341 s
+    # Time elapsed: 3.765197992324829 s
+    # 3.833490 seconds (15.40 M allocations: 1.498 GiB, 3.42% gc time, 76.79% compilation time)
+
     raw_polycubes_normal = [
         [3 1 0
          1 0 0
@@ -453,20 +480,15 @@ function main()
     # => [64, 72, 72, 96, 96, 144, 144]
     # => Result count: 11520
     # => Distinct result count: 480
-    # => 43.844851 seconds (326.88 M allocations: 42.572 GiB, 8.54% gc time, 9.63% compilation time)
+    # Time elapsed (before plotting): 14.141865015029907 s
+    # Time elapsed: 15.743392944335938 s
+    # 15.817499 seconds (325.09 M allocations: 42.480 GiB, 17.98% gc time, 18.35% compilation time)
+
 
     raw_polycubes = normal_cube ? raw_polycubes_normal : raw_polycubes_custom
 
     # Output: typeof(raw_polycubes): Vector{Matrix{Int64}}
     # println("typeof(raw_polycubes): $(typeof(raw_polycubes))")
-
-    # Create directories for output files.
-    if with_tests && !isdir(TEST_PATH) && !isfile(TEST_PATH)
-        mkdir(TEST_PATH)
-    end
-    if !isdir(RESULT_PATH) && !isfile(RESULT_PATH)
-        mkdir(RESULT_PATH)
-    end
 
     polycubes = [build_polycube(rp) for rp ∈ raw_polycubes]
     # Output: Vector{Array{Int64, 3}}
@@ -476,20 +498,19 @@ function main()
         [0, 0, 0, 0, 1, 1, 1, 1],
         [0, 1, 0, 1, 0, 0, 1, 1],
         [0, 0, 1, 1, 1, 0, 0, 1],
-        [(1,2,3), (4,2,3), (4,7,8), (7,5,6), (2,4,7), (1,6,2), (2,7,6), (7,8,5), (4,8,5), (4,5,3), (1,6,3), (6,3,5)],
         [0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0],
         [0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1],
-        [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1])
+        [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+        [(1,2,3), (4,2,3)], # left
+        [(7,5,6), (7,8,5)], # right
+        [(1,6,3), (6,3,5)], # backward
+        [(2,4,7), (4,7,8)], # forward
+        [(1,6,2), (2,7,6)], # bottom
+        [(4,8,5), (4,5,3)]  # top
+    )
 
     transformations = Vector{Vector{Array{Int64, 3}}}()
     for (i, pc) ∈ enumerate(polycubes)
-        if with_tests
-            # "Up" position
-            plot_polycube(template, pc, i, TEST_PATH * "Figure$i" * "_up.png")
-            if i == 1
-                plot_variations(template, pc, i)
-            end
-        end
         push!(transformations, collect(get_transformations(pc)))
     end
 
@@ -510,6 +531,28 @@ function main()
         println("Distinct result count: $(length(result_groups))")
     end
 
+    println("Time elapsed (before plotting): ", time() - start_time, " s")
+
+    ### Plotting
+
+    # Create directories for output files.
+    if with_tests && !isdir(TEST_PATH) && !isfile(TEST_PATH)
+        mkdir(TEST_PATH)
+    end
+    if !isdir(RESULT_PATH) && !isfile(RESULT_PATH)
+        mkdir(RESULT_PATH)
+    end
+
+    if with_tests
+        for (i, pc) ∈ enumerate(polycubes)
+            # "Up" position
+            plot_polycube(template, pc, i, TEST_PATH * "Figure$i" * "_up.png")
+            if i == 1
+                plot_variations(template, pc, i)
+            end
+        end
+    end
+
     plot()
     for (i, pc) ∈ enumerate(first_result)
         plot_polycube(template, pc, i, "", false)
@@ -521,6 +564,13 @@ function main()
     end
 
     println("Time elapsed: ", time() - start_time, " s")
+
+    # Show result in GUI. (Only works in interactive mode.)
+    plot()
+    for (i, pc) ∈ enumerate(first_result)
+        plot_polycube(template, pc, i, "", false)
+    end
+    gui()
 end
 
 @time main()
@@ -529,11 +579,6 @@ end
 # Result:
 # [[1 0 0; 0 0 0; 0 0 0;;; 1 0 0; 1 0 0; 0 0 0;;; 1 1 0; 0 0 0; 0 0 0], [0 1 0; 1 1 0; 0 1 0;;; 0 0 0; 0 0 0; 0 0 0;;; 0 0 0; 0 0 0; 0 0 0], [0 0 0; 0 0 0; 0 0 1;;; 0 0 0; 0 0 1; 0 1 1;;; 0 0 0; 0 0 0; 0 1 0], [0 0 0; 0 0 0; 0 0 0;;; 0 0 0; 0 1 0; 0 0 0;;; 0 0 1; 0 1 1; 0 0 1], [0 0 1; 0 0 1; 0 0 0;;; 0 1 1; 0 0 0; 0 0 0;;; 0 0 0; 0 0 0; 0 0 0], [0 0 0; 0 0 0; 1 0 0;;; 0 0 0; 0 0 0; 1 0 0;;; 0 0 0; 1 0 0; 1 0 0]]
 # [1 2 5; 2 2 5; 6 2 3;;; 1 5 5; 1 4 3; 6 3 3;;; 1 1 4; 6 4 4; 6 3 4]
-#  3.343250 seconds (7.60 M allocations: 418.443 MiB, 2.12% gc time, 87.33% compilation time)
-
-
-# # Output of "time julia soma_cube_solver.jl":
-#  3.343250 seconds (7.60 M allocations: 418.443 MiB, 2.12% gc time, 87.33% compilation time)
-# real	0m9,120s
-# user	0m9,225s
-# sys	0m0,318s
+# Time elapsed (before plotting): 1.8702459335327148 s
+# Time elapsed: 3.5776829719543457 s
+#   3.653212 seconds (6.96 M allocations: 384.466 MiB, 1.89% gc time, 83.53% compilation time)
